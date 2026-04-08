@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { Star, Clock, Users } from "lucide-react";
-import { Course, formatPrice } from "@/lib/data";
+import { formatPrice } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Formation = Tables<"formations">;
 
 interface CourseCardProps {
-  course: Course;
+  course: Formation;
 }
 
 const levelColors: Record<string, string> = {
@@ -22,20 +25,20 @@ export function CourseCard({ course }: CourseCardProps) {
       {/* Image */}
       <div className="relative aspect-video overflow-hidden">
         <img
-          src={course.image}
+          src={course.image_url || "/placeholder.svg"}
           alt={course.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
           width={600}
           height={400}
         />
-        {course.originalPrice && (
+        {course.original_price && (
           <div className="absolute top-3 left-3 rounded-full gradient-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-            -{Math.round((1 - course.price / course.originalPrice) * 100)}%
+            -{Math.round((1 - course.price / course.original_price) * 100)}%
           </div>
         )}
         <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className={`${levelColors[course.level]} border text-xs`}>
+          <Badge variant="secondary" className={`${levelColors[course.level] || ""} border text-xs`}>
             {course.level}
           </Badge>
         </div>
@@ -50,7 +53,7 @@ export function CourseCard({ course }: CourseCardProps) {
           {course.title}
         </h3>
         <p className="mb-4 flex-1 text-sm text-muted-foreground leading-relaxed line-clamp-2">
-          {course.shortDescription}
+          {course.short_description}
         </p>
 
         {/* Meta */}
@@ -61,7 +64,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </span>
           <span className="flex items-center gap-1">
             <Users size={12} />
-            {course.students}
+            {course.students_count}
           </span>
           <span className="flex items-center gap-1">
             <Clock size={12} />
@@ -75,9 +78,9 @@ export function CourseCard({ course }: CourseCardProps) {
             <p className="text-xs text-muted-foreground">{course.instructor}</p>
           </div>
           <div className="text-right">
-            {course.originalPrice && (
+            {course.original_price && (
               <span className="block text-xs text-muted-foreground line-through">
-                {formatPrice(course.originalPrice)}
+                {formatPrice(course.original_price)}
               </span>
             )}
             <span className="text-lg font-bold font-display text-accent">

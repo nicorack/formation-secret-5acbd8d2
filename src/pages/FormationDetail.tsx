@@ -1,12 +1,19 @@
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Star, BookOpen, Play, FileText, HelpCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Users, Star, BookOpen, Play, FileText, HelpCircle, CheckCircle, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/Layout";
-import { courses, formatPrice } from "@/lib/data";
+import { formatPrice } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-const typeIcons = {
+type Formation = Tables<"formations">;
+
+const typeIcons: Record<string, any> = {
   video: Play,
   pdf: FileText,
   quiz: HelpCircle,
@@ -14,7 +21,75 @@ const typeIcons = {
 
 const FormationDetail = () => {
   const { id } = useParams();
-  const course = courses.find((c) => c.id === id);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [course, setCourse] = useState<Formation | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [ordering, setOrdering] = useState(false);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      const { data: f } = await supabase
+        .from("formations")
+        .select("*")
+        .eq("id", id!)
+        .single();
+      setCourse(f);
+
+      if (f) {
+        const { data: mods } = await supabase
+          .from("modules")
+          .select("*, lessons(*)")
+          .eq("formation_id", f.id)
+          .order("sort_order");
+        setModules(
+          (mods || []).map((m: any) => ({
+            ...m,
+            lessons: (m.lessons || []).sort(
+              (a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)
+            ),
+          }))
+        );
+      }
+      setLoading(false);
+    };
+    fetchCourse();
+  }, [id]);
+
+  const handleOrder = async () => {
+    if (!user) {
+      toast.error("Veuillez vous connecter d'abord");
+      navigate("/auth");
+      return;
+    }
+    setOrdering(true);
+    try {
+      const { error } = await supabase.from("orders").insert({
+        user_id: user.id,
+        formation_id: course!.id,
+        amount: course!.price,
+        payment_method: "mvola",
+        status: "pending",
+      });
+      if (error) throw error;
+      toast.success(
+        "Commande créée ! Envoyez le paiement par MVola au 038 26 968 25 (Nico), puis attendez la confirmation de l'admin."
+      );
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setOrdering(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Chargement...</div>
+      </Layout>
+    );
+  }
 
   if (!course) {
     return (
@@ -27,7 +102,7 @@ const FormationDetail = () => {
     );
   }
 
-  const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);
+  const totalLessons = modules.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0);
 
   return (
     <Layout>
@@ -50,7 +125,7 @@ const FormationDetail = () => {
               <p className="mb-6 text-primary-foreground/80 leading-relaxed">{course.description}</p>
               <div className="flex flex-wrap items-center gap-4 text-sm text-primary-foreground/70">
                 <span className="flex items-center gap-1"><Star size={14} className="text-warning fill-warning" /> {course.rating}</span>
-                <span className="flex items-center gap-1"><Users size={14} /> {course.students} apprenants</span>
+                <span className="flex items-center gap-1"><Users size={14} /> {course.students_count} apprenants</span>
                 <span className="flex items-center gap-1"><Clock size={14} /> {course.duration}</span>
                 <span className="flex items-center gap-1"><BookOpen size={14} /> {totalLessons} leçons</span>
                 <Badge variant="outline" className="border-primary-foreground/30 text-primary-foreground">{course.level}</Badge>
@@ -66,17 +141,38 @@ const FormationDetail = () => {
               className="rounded-xl bg-card p-6 shadow-card-hover border border-border self-start"
             >
               <div className="mb-4">
-                {course.originalPrice && (
+                {course.original_price && (
                   <span className="text-sm text-muted-foreground line-through">
-                    {formatPrice(course.originalPrice)}
+                    {formatPrice(course.original_price)}
                   </span>
                 )}
                 <p className="text-3xl font-bold font-display text-accent">{formatPrice(course.price)}</p>
               </div>
-              <Button className="w-full gradient-accent text-accent-foreground border-0 font-semibold shadow-lg hover:opacity-90" size="lg">
-                Acheter la formation
+              <Button
+                className="w-full gradient-accent text-accent-foreground border-0 font-semibold shadow-lg hover:opacity-90"
+                size="lg"
+                onClick={handleOrder}
+                disabled={ordering}
+              >
+                {ordering ? "Commande en cours..." : "Acheter la formation"}
               </Button>
               <p className="mt-3 text-center text-xs text-muted-foreground">Accès à vie • Certificat inclus</p>
+
+              {/* MVola Payment Info */}
+              <div className="mt-4 rounded-lg bg-accent/5 border border-accent/20 p-4">
+                <p className="mb-2 text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Phone size={14} className="text-accent" /> Paiement MVola
+                </p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Envoyez <span className="font-bold text-accent">{formatPrice(course.price)}</span> au :
+                </p>
+                <p className="text-lg font-bold font-display text-foreground">038 26 968 25</p>
+                <p className="text-xs text-muted-foreground">Nom : <strong>Nico</strong></p>
+                <p className="mt-2 text-xs text-muted-foreground italic">
+                  Après le paiement, cliquez sur "Acheter" ci-dessus. L'admin confirmera votre accès.
+                </p>
+              </div>
+
               <div className="mt-4 rounded-lg bg-secondary p-4">
                 <p className="mb-2 text-sm font-semibold text-foreground">Ce cours inclut :</p>
                 <ul className="space-y-1.5 text-xs text-muted-foreground">
@@ -86,6 +182,16 @@ const FormationDetail = () => {
                   <li className="flex items-center gap-2"><CheckCircle size={12} className="text-accent" /> Certificat de fin</li>
                 </ul>
               </div>
+
+              {/* WhatsApp */}
+              <a
+                href="https://wa.me/261382696825"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-success/10 p-3 text-sm font-medium text-success hover:bg-success/20 transition-colors"
+              >
+                <MessageCircle size={16} /> Contacter sur WhatsApp
+              </a>
             </motion.div>
           </div>
         </div>
@@ -96,54 +202,58 @@ const FormationDetail = () => {
           <div className="grid gap-12 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-12">
               {/* Objectives */}
-              <div>
-                <h2 className="mb-4 font-display text-xl font-bold text-foreground">Objectifs pédagogiques</h2>
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {course.objectives.map((obj, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle size={16} className="mt-0.5 shrink-0 text-accent" />
-                      {obj}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {course.objectives && course.objectives.length > 0 && (
+                <div>
+                  <h2 className="mb-4 font-display text-xl font-bold text-foreground">Objectifs pédagogiques</h2>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {course.objectives.map((obj, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle size={16} className="mt-0.5 shrink-0 text-accent" />
+                        {obj}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Programme */}
-              <div>
-                <h2 className="mb-4 font-display text-xl font-bold text-foreground">Programme de la formation</h2>
-                <div className="space-y-3">
-                  {course.modules.map((mod, mi) => (
-                    <div key={mod.id} className="rounded-xl border border-border bg-card overflow-hidden">
-                      <div className="flex items-center justify-between bg-secondary px-5 py-3">
-                        <h3 className="font-display font-semibold text-foreground text-sm">
-                          Module {mi + 1} : {mod.title}
-                        </h3>
-                        <span className="text-xs text-muted-foreground">{mod.lessons.length} leçons</span>
+              {modules.length > 0 && (
+                <div>
+                  <h2 className="mb-4 font-display text-xl font-bold text-foreground">Programme de la formation</h2>
+                  <div className="space-y-3">
+                    {modules.map((mod: any, mi: number) => (
+                      <div key={mod.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="flex items-center justify-between bg-secondary px-5 py-3">
+                          <h3 className="font-display font-semibold text-foreground text-sm">
+                            Module {mi + 1} : {mod.title}
+                          </h3>
+                          <span className="text-xs text-muted-foreground">{mod.lessons?.length || 0} leçons</span>
+                        </div>
+                        <ul className="divide-y divide-border">
+                          {(mod.lessons || []).map((lesson: any) => {
+                            const Icon = typeIcons[lesson.type] || Play;
+                            return (
+                              <li key={lesson.id} className="flex items-center gap-3 px-5 py-3">
+                                <Icon size={14} className="shrink-0 text-accent" />
+                                <span className="flex-1 text-sm text-foreground">{lesson.title}</span>
+                                <span className="text-xs text-muted-foreground">{lesson.duration}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </div>
-                      <ul className="divide-y divide-border">
-                        {mod.lessons.map((lesson) => {
-                          const Icon = typeIcons[lesson.type];
-                          return (
-                            <li key={lesson.id} className="flex items-center gap-3 px-5 py-3">
-                              <Icon size={14} className="shrink-0 text-accent" />
-                              <span className="flex-1 text-sm text-foreground">{lesson.title}</span>
-                              <span className="text-xs text-muted-foreground">{lesson.duration}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Cover image */}
-              <div className="rounded-xl overflow-hidden border border-border">
-                <img src={course.image} alt={course.title} className="w-full object-cover aspect-video" loading="lazy" width={800} height={450} />
-              </div>
+              {course.image_url && (
+                <div className="rounded-xl overflow-hidden border border-border">
+                  <img src={course.image_url} alt={course.title} className="w-full object-cover aspect-video" loading="lazy" width={800} height={450} />
+                </div>
+              )}
             </div>
-
-            {/* Sticky sidebar (desktop) */}
             <div className="hidden lg:block" />
           </div>
         </div>
