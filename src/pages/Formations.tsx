@@ -1,29 +1,47 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/Layout";
 import { CourseCard } from "@/components/CourseCard";
-import { courses, categories } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Formation = Tables<"formations">;
 
 const Formations = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Toutes");
+  const [courses, setCourses] = useState<Formation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const { data } = await supabase
+        .from("formations")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      setCourses(data || []);
+      setLoading(false);
+    };
+    fetchCourses();
+  }, []);
 
   const filtered = useMemo(() => {
     return courses.filter((c) => {
       const matchesSearch =
         c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.shortDescription.toLowerCase().includes(search.toLowerCase());
+        (c.short_description || "").toLowerCase().includes(search.toLowerCase());
       const matchesCategory =
         activeCategory === "Toutes" || c.category === activeCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [search, activeCategory]);
+  }, [search, activeCategory, courses]);
 
   return (
     <Layout>
-      {/* Header */}
       <section className="gradient-hero py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="mb-4 font-display text-3xl font-bold text-primary-foreground md:text-4xl">
@@ -44,10 +62,8 @@ const Formations = () => {
         </div>
       </section>
 
-      {/* Filters + Grid */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          {/* Category filters */}
           <div className="mb-8 flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
@@ -64,8 +80,9 @@ const Formations = () => {
             ))}
           </div>
 
-          {/* Results */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="py-20 text-center text-muted-foreground">Chargement...</div>
+          ) : filtered.length === 0 ? (
             <div className="py-20 text-center">
               <p className="text-muted-foreground">Aucune formation trouvée.</p>
             </div>

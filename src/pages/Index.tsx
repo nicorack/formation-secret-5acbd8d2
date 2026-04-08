@@ -1,11 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Users, Award, Play, Star, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/Layout";
 import { CourseCard } from "@/components/CourseCard";
-import { courses, testimonials, formatPrice } from "@/lib/data";
+import { testimonials } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import heroBg from "@/assets/hero-bg.jpg";
+
+type Formation = Tables<"formations">;
 
 const stats = [
   { icon: BookOpen, value: "50+", label: "Formations" },
@@ -15,7 +20,20 @@ const stats = [
 ];
 
 const Index = () => {
-  const featuredCourses = courses.slice(0, 3);
+  const [featuredCourses, setFeaturedCourses] = useState<Formation[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const { data } = await supabase
+        .from("formations")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      setFeaturedCourses(data || []);
+    };
+    fetchCourses();
+  }, []);
 
   return (
     <Layout>
@@ -127,7 +145,7 @@ const Index = () => {
               { title: "Certificats", desc: "Obtenez un certificat de fin de formation pour valoriser vos compétences." },
               { title: "Support dédié", desc: "Une équipe disponible pour répondre à toutes vos questions." },
               { title: "Mobile friendly", desc: "Apprenez partout depuis votre téléphone, tablette ou ordinateur." },
-              { title: "Paiement facile", desc: "Payez par Mobile Money, carte bancaire ou virement en toute sécurité." },
+              { title: "Paiement facile", desc: "Payez par Mobile Money (MVola) en toute sécurité." },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
