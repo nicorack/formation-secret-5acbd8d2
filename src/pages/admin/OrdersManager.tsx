@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X, BookOpen, ShoppingCart, BarChart3, LogOut } from "lucide-react";
+import { Check, X, BookOpen, ShoppingCart, BarChart3, LogOut, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ interface OrderWithDetails {
   status: string;
   payment_method: string | null;
   payment_reference: string | null;
+  payment_proof_url: string | null;
   created_at: string;
   user_id: string;
   formations: { title: string } | null;
@@ -91,7 +92,7 @@ const OrdersManager = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Formation</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Montant</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Paiement</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Référence</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Preuve</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Statut</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
@@ -103,7 +104,15 @@ const OrdersManager = () => {
                   <td className="px-4 py-3 text-sm text-foreground">{o.formations?.title || "—"}</td>
                   <td className="px-4 py-3 text-sm font-medium text-foreground">{formatPrice(o.amount)}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{o.payment_method || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground font-mono">{o.payment_reference || "—"}</td>
+                  <td className="px-4 py-3">
+                    {o.payment_proof_url ? (
+                      <a href={o.payment_proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
+                        <Eye size={14} /> Voir
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge className={statusColors[o.status] || ""}>
                       {o.status === "pending" ? "En attente" : o.status === "confirmed" ? "Confirmé" : "Annulé"}
