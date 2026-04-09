@@ -162,14 +162,24 @@ const FormationDetail = () => {
                 )}
                 <p className="text-3xl font-bold font-display text-accent">{formatPrice(course.price)}</p>
               </div>
-              <Button
-                className="w-full gradient-accent text-accent-foreground border-0 font-semibold shadow-lg hover:opacity-90"
-                size="lg"
-                onClick={handleOrder}
-                disabled={ordering}
-              >
-                {ordering ? "Commande en cours..." : "Acheter la formation"}
-              </Button>
+              {hasAccess ? (
+                <Button
+                  className="w-full bg-success text-white border-0 font-semibold shadow-lg hover:bg-success/90"
+                  size="lg"
+                  onClick={() => navigate(`/formations/${course.id}/learn`)}
+                >
+                  <Play size={18} className="mr-2" /> Accéder au cours
+                </Button>
+              ) : (
+                <Button
+                  className="w-full gradient-accent text-accent-foreground border-0 font-semibold shadow-lg hover:opacity-90"
+                  size="lg"
+                  onClick={handleOrder}
+                  disabled={ordering}
+                >
+                  {ordering ? "Commande en cours..." : "Acheter la formation"}
+                </Button>
+              )}
               <p className="mt-3 text-center text-xs text-muted-foreground">Accès à vie • Certificat inclus</p>
 
               {/* MVola Payment Info */}
