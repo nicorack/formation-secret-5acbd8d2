@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Formations from "./pages/Formations";
 import FormationDetail from "./pages/FormationDetail";
 import Auth from "./pages/Auth";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
 import Dashboard from "./pages/admin/Dashboard";
 import FormationManager from "./pages/admin/FormationManager";
 import FormationEdit from "./pages/admin/FormationEdit";
@@ -30,6 +33,9 @@ const App = () => (
             <Route path="/formations/:id" element={<FormationDetail />} />
             <Route path="/formations/:id/learn" element={<CourseViewer />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/a-propos" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/connexion" element={<Auth />} />
             <Route path="/inscription" element={<Auth />} />
             <Route path="/admin" element={<Dashboard />} />
