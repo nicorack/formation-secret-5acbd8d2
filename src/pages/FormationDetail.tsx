@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Users, Star, BookOpen, Play, FileText, HelpCircle, CheckCircle, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Clock, Users, Star, BookOpen, Play, FileText, HelpCircle, CheckCircle, Phone, MessageCircle, Upload, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/Layout";
@@ -28,6 +28,8 @@ const FormationDetail = () => {
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -71,25 +73,47 @@ const FormationDetail = () => {
     fetchCourse();
   }, [id, user]);
 
+  const handleProofSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProofFile(file);
+      setProofPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleOrder = async () => {
     if (!user) {
       toast.error("Veuillez vous connecter d'abord");
       navigate("/auth");
       return;
     }
+    if (!proofFile) {
+      toast.error("Veuillez joindre la preuve de paiement (capture d'écran)");
+      return;
+    }
     setOrdering(true);
     try {
+      // Upload proof image
+      const ext = proofFile.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("payment-proofs").upload(path, proofFile);
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+
       const { error } = await supabase.from("orders").insert({
         user_id: user.id,
         formation_id: course!.id,
         amount: course!.price,
         payment_method: "mvola",
+        payment_proof_url: urlData.publicUrl,
         status: "pending",
       });
       if (error) throw error;
       toast.success(
-        "Commande créée ! Envoyez le paiement par MVola au 038 26 968 25 (Nico), puis attendez la confirmation de l'admin."
+        "Commande créée avec preuve de paiement ! L'admin va confirmer votre accès."
       );
+      setProofFile(null);
+      setProofPreview(null);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
