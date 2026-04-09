@@ -12,6 +12,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import FormationManager from "./pages/admin/FormationManager";
 import FormationEdit from "./pages/admin/FormationEdit";
 import OrdersManager from "./pages/admin/OrdersManager";
+import CourseViewer from "./pages/CourseViewer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/formations" element={<Formations />} />
             <Route path="/formations/:id" element={<FormationDetail />} />
+            <Route path="/formations/:id/learn" element={<CourseViewer />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/connexion" element={<Auth />} />
             <Route path="/inscription" element={<Auth />} />
