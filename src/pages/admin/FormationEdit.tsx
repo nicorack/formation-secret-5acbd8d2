@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, ShoppingCart, BarChart3, LogOut, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, ShoppingCart, BarChart3, LogOut, Save, Upload, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,8 @@ interface LessonData {
   duration: string;
   type: string;
   video_url: string;
+  video_file?: File | null;
+  uploading?: boolean;
   sort_order: number;
 }
 
