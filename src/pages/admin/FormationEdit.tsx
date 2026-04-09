@@ -160,7 +160,7 @@ const FormationEdit = () => {
         await supabase.from("modules").delete().eq("formation_id", id!);
       }
 
-      // Create modules and lessons
+      // Create modules and lessons (upload videos first)
       for (const mod of modules) {
         const { data: modData, error: modErr } = await supabase
           .from("modules")
@@ -170,16 +170,30 @@ const FormationEdit = () => {
         if (modErr) throw modErr;
 
         if (mod.lessons.length > 0) {
-          const { error: lesErr } = await supabase.from("lessons").insert(
-            mod.lessons.map((l) => ({
+          const lessonsToInsert = [];
+          for (const l of mod.lessons) {
+            let videoUrl = l.video_url || null;
+
+            // Upload video file if present
+            if (l.video_file) {
+              const ext = l.video_file.name.split(".").pop();
+              const path = `videos/${formationId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+              const { error: upErr } = await supabase.storage.from("course-assets").upload(path, l.video_file);
+              if (upErr) throw upErr;
+              const { data: urlData } = supabase.storage.from("course-assets").getPublicUrl(path);
+              videoUrl = urlData.publicUrl;
+            }
+
+            lessonsToInsert.push({
               module_id: modData.id,
               title: l.title,
               duration: l.duration,
               type: l.type,
-              video_url: l.video_url || null,
+              video_url: videoUrl,
               sort_order: l.sort_order,
-            }))
-          );
+            });
+          }
+          const { error: lesErr } = await supabase.from("lessons").insert(lessonsToInsert);
           if (lesErr) throw lesErr;
         }
       }
