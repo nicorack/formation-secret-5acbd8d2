@@ -28,7 +28,6 @@ const FormationDetail = () => {
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
-  const [ordering, setOrdering] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
