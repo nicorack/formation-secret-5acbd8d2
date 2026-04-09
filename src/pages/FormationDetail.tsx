@@ -214,12 +214,26 @@ const FormationDetail = () => {
                 <p className="text-sm text-muted-foreground mb-1">
                   Envoyez <span className="font-bold text-accent">{formatPrice(course.price)}</span> au :
                 </p>
-                <p className="text-lg font-bold font-display text-foreground">038 26 968 25</p>
-                <p className="text-xs text-muted-foreground">Nom : <strong>Nico</strong></p>
-                <p className="mt-2 text-xs text-muted-foreground italic">
-                  Après le paiement, cliquez sur "Acheter" ci-dessus. L'admin confirmera votre accès.
-                </p>
-              </div>
+                  <p className="text-lg font-bold font-display text-foreground">038 26 968 25</p>
+                  <p className="text-xs text-muted-foreground">Nom : <strong>Nico</strong></p>
+                  
+                  {/* Payment proof upload */}
+                  {!hasAccess && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                        <Upload size={12} className="text-accent" /> Preuve de paiement (capture d'écran)
+                      </p>
+                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-accent/30 bg-accent/5 p-3 text-sm text-muted-foreground hover:border-accent/50 hover:bg-accent/10 transition-colors">
+                        <Image size={16} className="text-accent" />
+                        {proofFile ? proofFile.name : "Cliquez pour joindre la capture"}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleProofSelect} />
+                      </label>
+                      {proofPreview && (
+                        <img src={proofPreview} alt="Preuve" className="mt-2 rounded-lg border border-border max-h-32 w-full object-contain" />
+                      )}
+                    </div>
+                  )}
+                </div>
 
               <div className="mt-4 rounded-lg bg-secondary p-4">
                 <p className="mb-2 text-sm font-semibold text-foreground">Ce cours inclut :</p>
