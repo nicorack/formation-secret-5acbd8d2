@@ -27,6 +27,8 @@ const FormationDetail = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [ordering, setOrdering] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -52,10 +54,23 @@ const FormationDetail = () => {
           }))
         );
       }
+
+      // Check if user has confirmed access
+      if (user) {
+        const { data: order } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("formation_id", id!)
+          .eq("status", "confirmed")
+          .maybeSingle();
+        setHasAccess(!!order);
+      }
+
       setLoading(false);
     };
     fetchCourse();
-  }, [id]);
+  }, [id, user]);
 
   const handleOrder = async () => {
     if (!user) {
