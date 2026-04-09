@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, ShoppingCart, BarChart3, LogOut, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, ShoppingCart, BarChart3, LogOut, Save, Upload, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,8 @@ interface LessonData {
   duration: string;
   type: string;
   video_url: string;
+  video_file?: File | null;
+  uploading?: boolean;
   sort_order: number;
 }
 
@@ -158,7 +160,7 @@ const FormationEdit = () => {
         await supabase.from("modules").delete().eq("formation_id", id!);
       }
 
-      // Create modules and lessons
+      // Create modules and lessons (upload videos first)
       for (const mod of modules) {
         const { data: modData, error: modErr } = await supabase
           .from("modules")
@@ -168,16 +170,30 @@ const FormationEdit = () => {
         if (modErr) throw modErr;
 
         if (mod.lessons.length > 0) {
-          const { error: lesErr } = await supabase.from("lessons").insert(
-            mod.lessons.map((l) => ({
+          const lessonsToInsert = [];
+          for (const l of mod.lessons) {
+            let videoUrl = l.video_url || null;
+
+            // Upload video file if present
+            if (l.video_file) {
+              const ext = l.video_file.name.split(".").pop();
+              const path = `videos/${formationId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+              const { error: upErr } = await supabase.storage.from("course-assets").upload(path, l.video_file);
+              if (upErr) throw upErr;
+              const { data: urlData } = supabase.storage.from("course-assets").getPublicUrl(path);
+              videoUrl = urlData.publicUrl;
+            }
+
+            lessonsToInsert.push({
               module_id: modData.id,
               title: l.title,
               duration: l.duration,
               type: l.type,
-              video_url: l.video_url || null,
+              video_url: videoUrl,
               sort_order: l.sort_order,
-            }))
-          );
+            });
+          }
+          const { error: lesErr } = await supabase.from("lessons").insert(lessonsToInsert);
           if (lesErr) throw lesErr;
         }
       }
@@ -316,55 +332,81 @@ const FormationEdit = () => {
                 </div>
 
                 {mod.lessons.map((les, li) => (
-                  <div key={li} className="ml-6 flex items-center gap-2 rounded-lg border border-border/50 bg-secondary/30 p-3">
-                    <Input
-                      value={les.title}
-                      onChange={(e) => {
-                        const u = [...modules];
-                        u[mi].lessons[li].title = e.target.value;
-                        setModules(u);
-                      }}
-                      placeholder="Titre de la leçon"
-                      className="flex-1"
-                    />
-                    <Input
-                      value={les.duration}
-                      onChange={(e) => {
-                        const u = [...modules];
-                        u[mi].lessons[li].duration = e.target.value;
-                        setModules(u);
-                      }}
-                      placeholder="Durée"
-                      className="w-20"
-                    />
-                    <Select
-                      value={les.type}
-                      onValueChange={(v) => {
-                        const u = [...modules];
-                        u[mi].lessons[li].type = v;
-                        setModules(u);
-                      }}
-                    >
-                      <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="video">Vidéo</SelectItem>
-                        <SelectItem value="pdf">PDF</SelectItem>
-                        <SelectItem value="quiz">Quiz</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      value={les.video_url}
-                      onChange={(e) => {
-                        const u = [...modules];
-                        u[mi].lessons[li].video_url = e.target.value;
-                        setModules(u);
-                      }}
-                      placeholder="URL vidéo"
-                      className="flex-1"
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => removeLesson(mi, li)}>
-                      <Trash2 size={12} className="text-destructive" />
-                    </Button>
+                  <div key={li} className="ml-6 space-y-2 rounded-lg border border-border/50 bg-secondary/30 p-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={les.title}
+                        onChange={(e) => {
+                          const u = [...modules];
+                          u[mi].lessons[li].title = e.target.value;
+                          setModules(u);
+                        }}
+                        placeholder="Titre de la leçon"
+                        className="flex-1"
+                      />
+                      <Input
+                        value={les.duration}
+                        onChange={(e) => {
+                          const u = [...modules];
+                          u[mi].lessons[li].duration = e.target.value;
+                          setModules(u);
+                        }}
+                        placeholder="Durée"
+                        className="w-20"
+                      />
+                      <Select
+                        value={les.type}
+                        onValueChange={(v) => {
+                          const u = [...modules];
+                          u[mi].lessons[li].type = v;
+                          setModules(u);
+                        }}
+                      >
+                        <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="video">Vidéo</SelectItem>
+                          <SelectItem value="pdf">PDF</SelectItem>
+                          <SelectItem value="quiz">Quiz</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="icon" onClick={() => removeLesson(mi, li)}>
+                        <Trash2 size={12} className="text-destructive" />
+                      </Button>
+                    </div>
+                    {/* Video upload or URL */}
+                    <div className="flex items-center gap-2">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-accent/30 bg-accent/5 px-3 py-2 text-xs text-muted-foreground hover:border-accent/50 hover:bg-accent/10 transition-colors shrink-0">
+                        <Upload size={14} className="text-accent" />
+                        {les.video_file ? les.video_file.name.slice(0, 20) : "Uploader vidéo"}
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const u = [...modules];
+                              u[mi].lessons[li].video_file = file;
+                              setModules(u);
+                            }
+                          }}
+                        />
+                      </label>
+                      <span className="text-xs text-muted-foreground">ou</span>
+                      <Input
+                        value={les.video_url}
+                        onChange={(e) => {
+                          const u = [...modules];
+                          u[mi].lessons[li].video_url = e.target.value;
+                          setModules(u);
+                        }}
+                        placeholder="URL vidéo externe"
+                        className="flex-1"
+                      />
+                      {les.video_url && (
+                        <Video size={14} className="shrink-0 text-success" />
+                      )}
+                    </div>
                   </div>
                 ))}
 

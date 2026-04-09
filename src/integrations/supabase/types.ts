@@ -157,6 +157,7 @@ export type Database = {
           formation_id: string
           id: string
           payment_method: string | null
+          payment_proof_url: string | null
           payment_reference: string | null
           status: string
           updated_at: string
@@ -168,6 +169,7 @@ export type Database = {
           formation_id: string
           id?: string
           payment_method?: string | null
+          payment_proof_url?: string | null
           payment_reference?: string | null
           status?: string
           updated_at?: string
@@ -179,6 +181,7 @@ export type Database = {
           formation_id?: string
           id?: string
           payment_method?: string | null
+          payment_proof_url?: string | null
           payment_reference?: string | null
           status?: string
           updated_at?: string
