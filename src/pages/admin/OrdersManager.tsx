@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X, BookOpen, ShoppingCart, BarChart3, LogOut, Eye } from "lucide-react";
+import { Check, X, BookOpen, ShoppingCart, BarChart3, LogOut, Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,27 +18,47 @@ interface OrderWithDetails {
   created_at: string;
   user_id: string;
   formations: { title: string } | null;
+  profiles: { full_name: string | null; phone: string | null } | null;
+}
+
+interface CustomerInfo {
+  user_id: string;
+  full_name: string | null;
+  phone: string | null;
+  email?: string;
 }
 
 const OrdersManager = () => {
   const { isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
-
+  const [customers, setCustomers] = useState<CustomerInfo[]>([]);
+  const [activeTab, setActiveTab] = useState<"orders" | "customers">("orders");
   useEffect(() => {
     if (!loading && !isAdmin) navigate("/");
   }, [loading, isAdmin]);
 
   useEffect(() => {
-    if (isAdmin) fetchOrders();
+    if (isAdmin) {
+      fetchOrders();
+      fetchCustomers();
+    }
   }, [isAdmin]);
 
   const fetchOrders = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("*, formations(title)")
+      .select("*, formations(title), profiles!orders_user_id_fkey(full_name, phone)")
       .order("created_at", { ascending: false });
     setOrders((data as any) || []);
+  };
+
+  const fetchCustomers = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, phone")
+      .order("created_at", { ascending: false });
+    setCustomers((data as any) || []);
   };
 
   const updateStatus = async (orderId: string, status: string) => {
