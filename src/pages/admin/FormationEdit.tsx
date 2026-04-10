@@ -352,32 +352,23 @@ const FormationEdit = () => {
                           setModules(u);
                         }}
                         placeholder="Durée"
-                        className="w-20"
+                        className="w-24"
                       />
-                      <Select
-                        value={les.type}
-                        onValueChange={(v) => {
-                          const u = [...modules];
-                          u[mi].lessons[li].type = v;
-                          setModules(u);
-                        }}
-                      >
-                        <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="video">Vidéo</SelectItem>
-                          <SelectItem value="pdf">PDF</SelectItem>
-                          <SelectItem value="quiz">Quiz</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <Button variant="ghost" size="icon" onClick={() => removeLesson(mi, li)}>
                         <Trash2 size={12} className="text-destructive" />
                       </Button>
                     </div>
-                    {/* Video upload or URL */}
+                    {/* Simple video upload area */}
                     <div className="flex items-center gap-2">
-                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-accent/30 bg-accent/5 px-3 py-2 text-xs text-muted-foreground hover:border-accent/50 hover:bg-accent/10 transition-colors shrink-0">
-                        <Upload size={14} className="text-accent" />
-                        {les.video_file ? les.video_file.name.slice(0, 20) : "Uploader vidéo"}
+                      <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-accent/30 bg-accent/5 px-4 py-3 text-sm text-muted-foreground hover:border-accent/60 hover:bg-accent/10 transition-colors">
+                        <Upload size={18} className="text-accent" />
+                        {les.video_file ? (
+                          <span className="text-foreground font-medium">{les.video_file.name}</span>
+                        ) : les.video_url ? (
+                          <span className="text-success flex items-center gap-1"><Video size={14} /> Vidéo ajoutée ✓</span>
+                        ) : (
+                          <span>Cliquer pour ajouter une vidéo</span>
+                        )}
                         <input
                           type="file"
                           accept="video/*"
@@ -392,21 +383,10 @@ const FormationEdit = () => {
                           }}
                         />
                       </label>
-                      <span className="text-xs text-muted-foreground">ou</span>
-                      <Input
-                        value={les.video_url}
-                        onChange={(e) => {
-                          const u = [...modules];
-                          u[mi].lessons[li].video_url = e.target.value;
-                          setModules(u);
-                        }}
-                        placeholder="URL vidéo externe"
-                        className="flex-1"
-                      />
-                      {les.video_url && (
-                        <Video size={14} className="shrink-0 text-success" />
-                      )}
                     </div>
+                    {les.video_url && !les.video_file && (
+                      <p className="text-xs text-muted-foreground truncate">URL: {les.video_url}</p>
+                    )}
                   </div>
                 ))}
 

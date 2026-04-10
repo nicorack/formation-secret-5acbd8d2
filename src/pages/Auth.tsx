@@ -12,6 +12,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -26,12 +27,16 @@ const Auth = () => {
         toast.success("Connexion réussie !");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { full_name: fullName } },
         });
         if (error) throw error;
+        // Save phone to profile
+        if (signUpData.user && phone) {
+          await supabase.from("profiles").update({ phone }).eq("user_id", signUpData.user.id);
+        }
         toast.success("Inscription réussie ! Vérifiez votre email.");
       }
     } catch (error: any) {
@@ -51,16 +56,29 @@ const Auth = () => {
             </h1>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <div>
-                  <Label htmlFor="name">Nom complet</Label>
-                  <Input
-                    id="name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Votre nom"
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="name">Nom complet</Label>
+                    <Input
+                      id="name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Votre nom"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Numéro de téléphone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="038 XX XXX XX"
+                      required
+                    />
+                  </div>
+                </>
               )}
               <div>
                 <Label htmlFor="email">Email</Label>
