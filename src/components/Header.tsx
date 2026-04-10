@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +53,9 @@ export function Header() {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/mes-formations"><BookOpen size={14} className="mr-1" /> Mes formations</Link>
+              </Button>
               {isAdmin && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin"><Shield size={14} className="mr-1" /> Admin</Link>
@@ -111,6 +114,11 @@ export function Header() {
               <div className="mt-3 flex flex-col gap-2">
                 {user ? (
                   <>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/mes-formations" onClick={() => setMobileOpen(false)}>
+                        <BookOpen size={14} className="mr-1" /> Mes formations
+                      </Link>
+                    </Button>
                     {isAdmin && (
                       <Button variant="outline" size="sm" asChild>
                         <Link to="/admin" onClick={() => setMobileOpen(false)}>
