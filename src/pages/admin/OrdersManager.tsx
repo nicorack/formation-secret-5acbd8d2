@@ -195,6 +195,11 @@ const OrdersManager = () => {
                           </Button>
                         </div>
                       )}
+                      {o.status === "confirmed" && (
+                        <Button size="sm" variant="ghost" onClick={() => updateStatus(o.id, "cancelled")} title="Révoquer l'accès" className="text-destructive hover:text-destructive">
+                          <X size={14} className="mr-1" /> Révoquer
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

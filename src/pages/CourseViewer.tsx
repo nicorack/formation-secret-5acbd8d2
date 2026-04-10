@@ -140,8 +140,6 @@ const CourseViewer = () => {
                 <video
                   key={activeLesson.id}
                   controls
-                  controlsList="nodownload"
-                  onContextMenu={(e) => e.preventDefault()}
                   className="h-full w-full"
                   src={activeLesson.video_url}
                 >
