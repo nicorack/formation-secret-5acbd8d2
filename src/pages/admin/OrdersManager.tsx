@@ -46,11 +46,30 @@ const OrdersManager = () => {
   }, [isAdmin]);
 
   const fetchOrders = async () => {
-    const { data } = await supabase
+    const { data: ordersData } = await supabase
       .from("orders")
-      .select("*, formations(title), profiles!orders_user_id_fkey(full_name, phone)")
+      .select("*, formations(title)")
       .order("created_at", { ascending: false });
-    setOrders((data as any) || []);
+
+    // Fetch profiles for all order user_ids
+    const userIds = [...new Set((ordersData || []).map((o: any) => o.user_id))];
+    let profilesMap: Record<string, { full_name: string | null; phone: string | null }> = {};
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone")
+        .in("user_id", userIds);
+      for (const p of profs || []) {
+        profilesMap[p.user_id] = { full_name: p.full_name, phone: p.phone };
+      }
+    }
+
+    setOrders(
+      (ordersData || []).map((o: any) => ({
+        ...o,
+        profiles: profilesMap[o.user_id] || null,
+      }))
+    );
   };
 
   const fetchCustomers = async () => {
