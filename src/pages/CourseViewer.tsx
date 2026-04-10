@@ -4,6 +4,7 @@ import { ArrowLeft, Lock, Play, FileText, HelpCircle, CheckCircle, Circle } from
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ const CourseViewer = () => {
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeLesson, setActiveLesson] = useState<any>(null);
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (authLoading) return;
@@ -92,8 +94,43 @@ const CourseViewer = () => {
     if (sorted.length > 0 && sorted[0].lessons?.length > 0) {
       setActiveLesson(sorted[0].lessons[0]);
     }
+
+    // Load progress
+    const { data: progressData } = await supabase
+      .from("lesson_progress")
+      .select("lesson_id")
+      .eq("user_id", user!.id)
+      .eq("formation_id", id!)
+      .eq("completed", true);
+    setCompletedLessons(new Set((progressData || []).map((p: any) => p.lesson_id)));
+
     setLoading(false);
   };
+
+  const toggleLessonComplete = useCallback(async (lessonId: string) => {
+    if (!user) return;
+    const isCompleted = completedLessons.has(lessonId);
+    if (isCompleted) {
+      // Can't uncomplete for simplicity, just ignore
+      return;
+    }
+    const { error } = await supabase.from("lesson_progress").upsert({
+      user_id: user.id,
+      lesson_id: lessonId,
+      formation_id: id!,
+      completed: true,
+      completed_at: new Date().toISOString(),
+    }, { onConflict: "user_id,lesson_id" });
+    if (!error) {
+      setCompletedLessons((prev) => new Set([...prev, lessonId]));
+      toast.success("Leçon marquée comme terminée !");
+    }
+  }, [user, id, completedLessons]);
+
+  const allLessons = modules.flatMap((m: any) => m.lessons || []);
+  const totalLessons = allLessons.length;
+  const completedCount = allLessons.filter((l: any) => completedLessons.has(l.id)).length;
+  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   if (loading || authLoading) {
     return (
