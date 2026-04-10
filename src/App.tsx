@@ -16,6 +16,7 @@ import FormationManager from "./pages/admin/FormationManager";
 import FormationEdit from "./pages/admin/FormationEdit";
 import OrdersManager from "./pages/admin/OrdersManager";
 import CourseViewer from "./pages/CourseViewer";
+import MesFormations from "./pages/MesFormations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/formations" element={<Formations />} />
             <Route path="/formations/:id" element={<FormationDetail />} />
             <Route path="/formations/:id/learn" element={<CourseViewer />} />
+            <Route path="/mes-formations" element={<MesFormations />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/a-propos" element={<About />} />
             <Route path="/contact" element={<Contact />} />

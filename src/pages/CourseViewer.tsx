@@ -167,7 +167,16 @@ const CourseViewer = () => {
           <ArrowLeft size={16} /> Retour à la formation
         </Link>
 
-        <h1 className="mb-6 font-display text-2xl font-bold text-foreground">{course?.title}</h1>
+        <h1 className="mb-2 font-display text-2xl font-bold text-foreground">{course?.title}</h1>
+
+        {/* Progress bar */}
+        <div className="mb-6 space-y-1.5">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{completedCount} / {totalLessons} leçons terminées</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2.5" />
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Video Player */}
@@ -190,12 +199,31 @@ const CourseViewer = () => {
             )}
 
             <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="font-display font-semibold text-foreground text-lg">
-                {activeLesson?.title}
-              </h2>
-              {activeLesson?.duration && (
-                <p className="mt-1 text-sm text-muted-foreground">Durée : {activeLesson.duration}</p>
-              )}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-display font-semibold text-foreground text-lg">
+                    {activeLesson?.title}
+                  </h2>
+                  {activeLesson?.duration && (
+                    <p className="mt-1 text-sm text-muted-foreground">Durée : {activeLesson.duration}</p>
+                  )}
+                </div>
+                {activeLesson && !completedLessons.has(activeLesson.id) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => toggleLessonComplete(activeLesson.id)}
+                  >
+                    <CheckCircle size={14} className="mr-1" /> Terminer
+                  </Button>
+                )}
+                {activeLesson && completedLessons.has(activeLesson.id) && (
+                  <span className="flex items-center gap-1 text-sm text-accent shrink-0">
+                    <CheckCircle size={14} /> Terminée
+                  </span>
+                )}
+              </div>
               {activeLesson?.content && (
                 <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">{activeLesson.content}</p>
               )}
@@ -216,6 +244,7 @@ const CourseViewer = () => {
                   {(mod.lessons || []).map((lesson: any) => {
                     const Icon = typeIcons[lesson.type] || Play;
                     const isActive = activeLesson?.id === lesson.id;
+                    const isDone = completedLessons.has(lesson.id);
                     return (
                       <li key={lesson.id}>
                         <button
@@ -224,12 +253,14 @@ const CourseViewer = () => {
                             isActive ? "bg-accent/10 border-l-2 border-accent" : ""
                           }`}
                         >
-                          {isActive ? (
+                          {isDone ? (
                             <CheckCircle size={14} className="shrink-0 text-accent" />
+                          ) : isActive ? (
+                            <Play size={14} className="shrink-0 text-accent" />
                           ) : (
-                            <Icon size={14} className="shrink-0 text-muted-foreground" />
+                            <Circle size={14} className="shrink-0 text-muted-foreground" />
                           )}
-                          <span className={`flex-1 text-sm ${isActive ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                          <span className={`flex-1 text-sm ${isActive ? "text-foreground font-medium" : isDone ? "text-foreground" : "text-muted-foreground"}`}>
                             {lesson.title}
                           </span>
                           {lesson.duration && (
