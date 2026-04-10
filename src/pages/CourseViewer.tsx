@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock, Play, FileText, HelpCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Lock, Play, FileText, HelpCircle, CheckCircle, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
