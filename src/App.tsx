@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/formations/:id" element={<FormationDetail />} />
             <Route path="/formations/:id/learn" element={<CourseViewer />} />
             <Route path="/mes-formations" element={<MesFormations />} />
+            <Route path="/ia" element={<AIAssistant />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/a-propos" element={<About />} />
             <Route path="/contact" element={<Contact />} />
