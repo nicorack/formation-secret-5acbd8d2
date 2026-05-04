@@ -17,6 +17,7 @@ import FormationEdit from "./pages/admin/FormationEdit";
 import OrdersManager from "./pages/admin/OrdersManager";
 import CourseViewer from "./pages/CourseViewer";
 import MesFormations from "./pages/MesFormations";
+import AIAssistant from "./pages/AIAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
